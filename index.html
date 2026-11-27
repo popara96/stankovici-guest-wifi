@@ -3,8 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f7f5">
   <title>Stankovici Guest Wi-Fi</title>
+  <script>
+    try {
+      const theme = localStorage.getItem("theme");
+      if (theme === "light" || theme === "dark") {
+        document.documentElement.dataset.theme = theme;
+      }
+    } catch (error) {
+      console.warn("Could not read the saved theme preference.", error);
+    }
+  </script>
   <style>
     :root {
       color-scheme: light;
@@ -14,6 +23,29 @@
       --surface: #ffffff;
       --bg: #f7f8f5;
       --accent: #28634b;
+      --accent-bg: #edf4ef;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme]) {
+        color-scheme: dark;
+        --ink: #edf2ed;
+        --muted: #b2bdb2;
+        --line: #39463d;
+        --surface: #222b25;
+        --bg: #151c17;
+        --accent: #a4d5b6;
+        --accent-bg: #30473a;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --ink: #edf2ed;
+      --muted: #b2bdb2;
+      --line: #39463d;
+      --surface: #222b25;
+      --bg: #151c17;
+      --accent: #a4d5b6;
+      --accent-bg: #30473a;
     }
     * { box-sizing: border-box; }
     body {
@@ -37,8 +69,9 @@
     .mark {
       width: 52px; height: 52px; display: grid; place-items: center;
       margin-bottom: 20px; border-radius: 16px;
-      background: #edf4ef; color: var(--accent);
+      background: var(--accent-bg); color: var(--accent);
     }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
     h1 { margin: 0; font-size: 1.65rem; letter-spacing: -.035em; }
     .intro { margin: 7px 0 25px; color: var(--muted); }
     .field {
@@ -54,7 +87,7 @@
     .value { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
     button {
       flex: 0 0 auto; border: 0; border-radius: 9px; padding: 8px 11px;
-      background: #edf4ef; color: var(--accent); font: inherit;
+      background: var(--accent-bg); color: var(--accent); font: inherit;
       font-size: .85rem; font-weight: 650; cursor: pointer;
     }
     button:focus-visible { outline: 3px solid #8bb99f; outline-offset: 2px; }
@@ -67,7 +100,7 @@
       border: 1px dashed #cbd3ca; border-radius: 15px; background: #fff;
     }
     .qr-frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
-    .qr-placeholder { padding: 12px; color: var(--muted); font-size: .88rem; }
+    .qr-placeholder { padding: 12px; color: #686e66; font-size: .88rem; }
     .hint { margin-top: 12px !important; font-size: .82rem !important; }
     footer { margin-top: 25px; padding-top: 17px; border-top: 1px solid var(--line); color: var(--muted); text-align: center; font-size: .8rem; }
     @media (max-width: 380px) { main { padding: 23px; } }
@@ -75,11 +108,14 @@
 </head>
 <body>
   <main>
-    <div class="mark" aria-hidden="true">
-      <svg width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-        <path d="M5 9a11 11 0 0 1 14 0M8 12a6.5 6.5 0 0 1 8 0m-5 3a2 2 0 0 1 2 0"/>
-        <circle cx="12" cy="18" r="1" fill="currentColor" stroke="none"/>
-      </svg>
+    <div class="header">
+      <div class="mark" aria-hidden="true">
+        <svg width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M5 9a11 11 0 0 1 14 0M8 12a6.5 6.5 0 0 1 8 0m-5 3a2 2 0 0 1 2 0"/>
+          <circle cx="12" cy="18" r="1" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <button type="button" id="theme-toggle" aria-pressed="false" hidden>Dark mode</button>
     </div>
 
     <h1>Welcome to our Wi-Fi</h1>
@@ -115,6 +151,26 @@
   </main>
 
   <script>
+    const themeToggle = document.getElementById("theme-toggle");
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+    function updateThemeToggle() {
+      const theme = document.documentElement.dataset.theme;
+      themeToggle.setAttribute("aria-pressed", String(theme ? theme === "dark" : systemTheme.matches));
+    }
+    themeToggle.addEventListener("click", () => {
+      const theme = themeToggle.getAttribute("aria-pressed") === "true" ? "light" : "dark";
+      document.documentElement.dataset.theme = theme;
+      updateThemeToggle();
+      try {
+        localStorage.setItem("theme", theme);
+      } catch (error) {
+        console.warn("Could not save the theme preference.", error);
+      }
+    });
+    systemTheme.addEventListener("change", updateThemeToggle);
+    updateThemeToggle();
+    themeToggle.hidden = false;
+
     document.querySelectorAll("[data-copy]").forEach((button) => {
       button.addEventListener("click", async () => {
         const text = document.getElementById(button.dataset.copy).textContent;
